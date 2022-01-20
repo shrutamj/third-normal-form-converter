@@ -1,0 +1,557 @@
+#include <iostream>
+#include <string.h>
+#include <vector>
+#include <unordered_map>
+#include<bits/stdc++.h>
+
+using namespace std;
+
+class FD
+{
+
+  string lhs , rhs;
+
+  public :
+
+  FD(string left , string right)
+  {
+    lhs = left;
+
+    rhs = right;
+  }
+
+  string get_lhs()
+  {
+    return lhs;
+  }
+
+  string get_rhs()
+  {
+    return rhs;
+  }
+
+  void set_lhs(string new_lhs)
+  {
+    lhs = new_lhs;
+  }
+
+  string set_rhs(string new_rhs)
+  {
+    rhs = new_rhs;
+  }
+
+
+};
+
+
+bool are_strings_length_equal(string substr , string str)//tested
+{
+    if(substr.length() == str.length())
+      return true;
+    
+    else
+        false;
+} 
+
+
+bool is_substring(string substr , string str)//tested
+{
+    unordered_map<char , bool> map;
+
+    for (int i = 0; i < substr.length(); i++)
+    {
+        map[substr.at(i)] = false;
+    }
+    
+    for (int i = 0; i < str.length(); i++)
+    {
+        if(map.count(str.at(i)))
+        {
+            map[str.at(i)] = true;
+        }
+    }
+    
+    for (int i = 0; i < substr.length(); i++)
+    {
+        if(!map[substr.at(i)])
+        {
+            return false;
+        }
+    }
+  
+    return true;
+} 
+
+string remove_or_replace_FD(vector<FD *> &FD_array,unordered_map<string , int> &sub_string_map , FD &current_FD)
+{
+
+  string closure_str ,sub_string,lhs_string,rhs_string;
+
+  unordered_map<int , bool> *map;
+
+  for(int i = 1 ; i <= current_FD.get_lhs().length() ; i++)
+  {
+    
+    for(unordered_map<string , int> :: iterator j = sub_string_map.begin() ; j != sub_string_map.end() ; j++ )
+    {
+
+      sub_string = j -> first;
+
+      closure_str = j -> first;
+
+      if(j -> second == i)
+      {
+
+       // cout << "sub_string  :  " << sub_string << " -> "<< current_FD.get_rhs() << endl;
+
+        map = new unordered_map<int , bool>; 
+
+        //cout << "FD_size  :  " << FD_array.size() ;
+
+        for(int FD_index = 0 ; FD_index < FD_array.size() ; FD_index++)
+        {
+
+          lhs_string = FD_array.at(FD_index) -> get_lhs(); 
+
+          rhs_string = FD_array.at(FD_index) -> get_rhs();          
+
+          //cout << "  |  lhs : " << lhs_string << " |  rhs :  " << rhs_string << endl;
+
+          if(lhs_string != current_FD.get_lhs() or rhs_string != current_FD.get_rhs())
+          {
+            //if(current_FD.get_lhs() == "C" and current_FD.get_rhs() == "S")
+               
+              //cout <<"this -> "  << closure_str << "  "  << endl;
+
+            if(!map -> count(FD_index) and is_substring(lhs_string , closure_str))
+            {
+
+              closure_str += rhs_string;
+              //put A -> B  | 1
+  
+              map -> insert({FD_index , true}); 
+
+              FD_index = -1;
+              continue;
+            }
+          }
+
+        }
+
+       delete map; //delete map
+      
+      }
+      
+
+      if(is_substring(current_FD.get_rhs() , closure_str))
+      {
+        return "0";
+      }
+
+      else
+
+      if(is_substring(current_FD.get_lhs() , closure_str) and is_substring(sub_string , current_FD.get_lhs()) and ! are_strings_length_equal(sub_string , current_FD.get_lhs()))
+      {
+        return sub_string;
+      }
+    
+    }
+
+  }
+  return "1";
+
+}
+
+void create_sub_strings( string sub_string , string lhs ,  unordered_map<string , int> &sub_string_map)
+{
+  if(lhs.length() == 0 and sub_string.length() <= 0)
+  {   
+    return;
+  }
+
+  if(lhs.length() == 0)
+  {
+    sub_string_map.insert({sub_string , sub_string.length()});
+
+    //cout << " " << sub_string << "   " << sub_string.length() <<endl; 
+
+    return;
+  }
+
+  for(int i = 0 ; i < lhs.length() ; i++)
+  {
+    create_sub_strings(sub_string + lhs.at(i), lhs.substr(i + 1 , lhs.length() - (i + 1)) , sub_string_map);
+  }
+
+  create_sub_strings(sub_string, "" ,  sub_string_map);
+
+  return;
+
+}
+
+bool Check_Candidate_Key_In_FD(vector<FD *> &FD_array , string candidate_key)
+{
+
+  unordered_map<char , bool> track_attributes;
+
+  char attribute;
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    for(int lhs_index = 0 ; lhs_index < FD_array.at(i) -> get_lhs().length() ; lhs_index++)
+    {
+
+      attribute = FD_array.at(i) -> get_lhs().at(lhs_index);
+
+      if(!track_attributes.count(attribute))
+      {
+        track_attributes.insert({attribute , true});
+      }
+
+    }
+
+    attribute = FD_array.at(i) -> get_rhs().at(0);
+
+    if(!track_attributes.count(FD_array.at(i) -> get_rhs().at(0)))
+    {
+      track_attributes.insert({attribute , true});
+    }
+
+  }
+
+  for(int i = 0 ; i < candidate_key.length() ; i++)
+  {
+    if(!track_attributes.count(candidate_key.at(i)))
+    {
+      return false;
+    }
+  }
+
+  return true;
+
+}
+
+unordered_map<string , string> & join_FD(vector<FD *> &FD_array)
+{
+  unordered_map<string , string> &FD_map = *(new unordered_map<string , string>);
+
+  for(int FD_index = 0 ; FD_index < FD_array.size() ; FD_index++)
+  {
+    if( !FD_map.count( FD_array.at(FD_index) -> get_lhs() ) )
+    {
+      FD_map.insert({FD_array.at(FD_index) -> get_lhs() , FD_array.at(FD_index) -> get_rhs()});
+    }
+
+    else
+    {
+      FD_map[FD_array.at(FD_index) -> get_lhs()] += FD_array.at(FD_index) -> get_rhs();
+    }
+
+  }
+
+  return FD_map;
+}
+
+string find_part_of_CK(vector<FD *> &FD_array , unordered_map<string , int> &sub_strings_map , string attributes_not_in_rhs)
+{
+ 
+
+  string sub_string , closure = "";
+
+  unordered_map<int , bool> *track_map;
+
+  for(int count = 0 ; count <= attributes_not_in_rhs.length() ; count++)
+  {
+      unordered_map<string , int> :: iterator i = sub_strings_map.begin();
+
+      for(; i != sub_strings_map.end() ; i++)
+      {
+
+        if(i -> second == count)
+        {
+        
+          track_map = new unordered_map<int , bool>;
+
+          sub_string = i -> first;
+
+          closure = sub_string;
+
+          for(int FD_index = 0 ; FD_index ; FD_index++)
+          {
+
+            if(!track_map -> count( FD_index ))
+            {
+
+              if(is_substring(FD_array.at(FD_index) -> get_lhs() , closure))
+              {
+
+                closure += FD_array.at(FD_index) -> get_rhs();
+
+                track_map -> insert({FD_index , true});
+
+                FD_index = -1;  
+
+              }
+
+            }
+
+          }
+
+          delete track_map;
+
+          if(is_substring(attributes_not_in_rhs , closure))
+          {
+
+            return sub_string;
+
+          }
+
+
+
+
+        }
+
+
+      }
+
+  }
+    
+
+
+
+
+
+
+
+
+
+}
+
+int main()
+{
+
+  string FD_set;                //FD's set as a string 
+
+  cin >> FD_set;
+
+  string attribute_set;
+
+  cin >> attribute_set;
+
+  string lhs , rhs;
+
+  int prev = 0;
+
+  FD *FD_pointer;
+
+  vector<FD *> FD_array;
+
+  unordered_map<string , int> *sub_string_map;
+
+  for(int curr = 0 ; curr < FD_set.length() ; curr++)
+  {
+    if(FD_set[curr] == '-')
+    {
+      lhs = FD_set.substr(prev , curr - prev);
+      //cout <<"lhs  "<< lhs<<endl;
+      curr += 1;
+
+      prev = curr + 1;
+
+    }
+
+    else
+
+    if(FD_set[curr] == ',' or FD_set[curr] == ';')
+    {
+      rhs = FD_set.substr(prev , curr - prev);
+      //cout <<"rhs  "<< rhs<<endl;
+      prev = curr + 1;
+
+      FD_pointer = new FD(lhs , rhs);
+
+      FD_array.push_back(FD_pointer);
+
+    }
+
+  }
+
+  
+   string attributes_not_in_rhs = "";
+
+  unordered_map<char, bool> track_attributes;
+
+  
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    if(!track_attributes.count(FD_array.at(i) -> get_rhs().at(0)))
+    {
+        
+      track_attributes.insert({FD_array.at(i) -> get_rhs().at(0) , true});
+    
+    }  
+  }
+
+  string str = "";
+
+  for(int i = 0 ; i < attribute_set.length() ; i++)
+  {
+    if(!track_attributes.count( attribute_set.at(i) ))
+    {
+      attributes_not_in_rhs.append(1 , attribute_set.at(i)) ;
+    }
+  }
+
+  //cout << "now   :  " << attributes_not_in_rhs << endl;
+
+  unordered_map<int , bool> map;
+
+
+
+  string lhs_string , rhs_string ,closure = attributes_not_in_rhs;
+
+  for(int FD_array_index = 0 ; FD_array_index < FD_array.size() ; FD_array_index++)
+  {
+
+    lhs_string = FD_array.at(FD_array_index) -> get_lhs();
+
+    rhs_string = FD_array.at(FD_array_index) -> get_rhs();
+
+    if(!map.count(FD_array_index) and is_substring(lhs_string , closure))
+    {
+      closure += rhs_string;
+
+      map.insert({FD_array_index , true});
+
+      FD_array_index = -1;
+    }
+
+  }
+
+  //cout << "attr " << attributes_not_in_rhs <<"   closure : "  << closure << endl;
+
+  unordered_map<char , bool> track_map;
+
+  for(int i = 0 ; i < attribute_set.length() ; i++)
+  {
+
+    track_map.insert({attribute_set.at(i) , true});
+
+  }
+
+  
+  for(int i = 0 ; i < closure.length() ; i++)
+  {
+
+    track_map[closure.at(i)]= false;
+
+  }
+
+  str = "";
+
+  for(unordered_map<char , bool> :: iterator i = track_map.begin() ; i != track_map.end(); i++)
+  {
+    if(i -> second == true)
+    {
+      str += i -> first;
+    }
+  }
+
+   
+
+  string output;
+
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    sub_string_map = new unordered_map<string , int>;
+
+    create_sub_strings("" ,FD_array[i] -> get_lhs() ,  *sub_string_map);
+
+    output = remove_or_replace_FD(FD_array , *sub_string_map , *FD_array.at(i));
+
+    //cout << "output  : " << output << endl;
+
+    delete sub_string_map;
+
+    if(output == "0")
+    {
+      FD_array.erase(FD_array.begin() + i);
+      i--;
+    }
+
+    else
+
+    if(output != "1")
+    {
+      FD_array.at(i) -> set_lhs(output);
+    }
+
+  }
+
+  cout << endl<<endl<<endl << "SET OF RELATIONS FORMED AFTER NORMALISATION INTO 3NF  : " << endl<<endl;
+
+  unordered_map<string,string> &FD_map = join_FD(FD_array);
+
+  unordered_map<string,string> :: iterator i = FD_map.begin();
+
+  int num = 0;
+
+
+  for( ; i != FD_map.end() ; i++,num++)
+  {
+    cout << "R" << num + 1 << "  =  " << "(" << i -> first << i -> second << ")" <<endl <<endl;
+  }
+
+  
+
+  if(attributes_not_in_rhs.length() != 0 and !Check_Candidate_Key_In_FD(FD_array , attributes_not_in_rhs))
+  {
+    if(str.length() == 0)
+    {
+      
+      cout << "R" << num + 1 << "  =  " << "(" << attributes_not_in_rhs << ")" <<endl<<endl<<endl;
+      
+    }
+
+    else
+    {
+      
+      create_sub_strings("" , str , *sub_string_map);
+
+      string part = find_part_of_CK(FD_array , *sub_string_map , attributes_not_in_rhs);
+
+      cout << "R" << num + 1 << "  =  " << "(" <<  part + attributes_not_in_rhs << ")" <<endl<<endl<<endl;
+
+        
+    }
+  
+  }
+}
+
+/*
+
+input first line shouldbe set of all function dependences
+each should be of the form "lhs_attributes"->"single_rhs_attriutes" (eg, write EF->GH as EF->G,EF->H seperately)
+seperated by comma and finish them by ; at the end
+
+second line should be the set of single letter attributes where each letter corresponds to an unique attribute.
+
+sample input 1 :
+A->B,ABCD->E,EF->G,EF->H,ACDF->E,ACDF->G;
+ABCDEFGH
+
+sample input 2 :
+C->C,C->S,C->J,C->D,C->P,C->Q,C->V,SD->P,JP->C,J->S;
+CSJDPQV
+
+sample input 3:
+A->B,A->C,B->C;
+ABC
+
+*/
+
+
+
+
