@@ -1,0 +1,1022 @@
+
+//THIS PROGRAM WILL FRST TELL YOU IF THE FUNTIONAL DEPENDENCY IS IN 3NF OR NOT IN 3NF ,  IF NOT IT CONVERTES TO 3NF OR IF ITS IN 3NF IT TELL IF IT IS IN BCNF OR NOT , IF NOT THEN CONVERTS TO BCNF
+
+
+#include <iostream>
+#include <string.h>
+#include <vector>
+#include <unordered_map>
+#include<bits/stdc++.h>
+
+using namespace std;
+
+class FD
+{
+
+  string lhs , rhs;
+
+  public :
+
+  FD(string left , string right)
+  {
+    lhs = left;
+
+    rhs = right;
+  }
+
+  string get_lhs()
+  {
+    return lhs;
+  }
+
+  string get_rhs()
+  {
+    return rhs;
+  }
+
+  void set_lhs(string new_lhs)
+  {
+    lhs = new_lhs;
+  }
+
+  string set_rhs(string new_rhs)
+  {
+    rhs = new_rhs;
+  }
+
+
+};
+
+
+bool are_strings_length_equal(string substr , string str)//tested
+{
+    if(substr.length() == str.length())
+      return true;
+    
+    else
+        false;
+} 
+
+
+bool is_substring(string substr , string str)//tested
+{
+    unordered_map<char , bool> map;
+
+    for (int i = 0; i < substr.length(); i++)
+    {
+        map[substr.at(i)] = false;
+    }
+    
+    for (int i = 0; i < str.length(); i++)
+    {
+        if(map.count(str.at(i)))
+        {
+            map[str.at(i)] = true;
+        }
+    }
+    
+    for (int i = 0; i < substr.length(); i++)
+    {
+        if(!map[substr.at(i)])
+        {
+            return false;
+        }
+    }
+  
+    return true;
+} 
+
+string remove_or_replace_FD(vector<FD *> &FD_array,unordered_map<string , int> &sub_string_map , FD &current_FD)
+{
+
+  string closure_str ,sub_string,lhs_string,rhs_string;
+
+  unordered_map<int , bool> *map;
+
+  for(int i = 1 ; i <= current_FD.get_lhs().length() ; i++)
+  {
+    
+    for(unordered_map<string , int> :: iterator j = sub_string_map.begin() ; j != sub_string_map.end() ; j++ )
+    {
+
+      sub_string = j -> first;
+
+      closure_str = j -> first;
+
+      if(j -> second == i)
+      {
+
+       // cout << "sub_string  :  " << sub_string << " -> "<< current_FD.get_rhs() << endl;
+
+        map = new unordered_map<int , bool>; 
+
+        //cout << "FD_size  :  " << FD_array.size() ;
+
+        for(int FD_index = 0 ; FD_index < FD_array.size() ; FD_index++)
+        {
+
+          lhs_string = FD_array.at(FD_index) -> get_lhs(); 
+
+          rhs_string = FD_array.at(FD_index) -> get_rhs();          
+
+          //cout << "  |  lhs : " << lhs_string << " |  rhs :  " << rhs_string << endl;
+
+          if(lhs_string != current_FD.get_lhs() or rhs_string != current_FD.get_rhs())
+          {
+            //if(current_FD.get_lhs() == "C" and current_FD.get_rhs() == "S")
+               
+              //cout <<"this -> "  << closure_str << "  "  << endl;
+
+            if(!map -> count(FD_index) and is_substring(lhs_string , closure_str))
+            {
+
+              closure_str += rhs_string;
+              //put A -> B  | 1
+  
+              map -> insert({FD_index , true}); 
+
+              FD_index = -1;
+              continue;
+            }
+          }
+
+        }
+
+       delete map; //delete map
+      
+      }
+      
+
+      if(is_substring(current_FD.get_rhs() , closure_str))
+      {
+        return "0";
+      }
+
+      else
+
+      if(is_substring(current_FD.get_lhs() , closure_str) and is_substring(sub_string , current_FD.get_lhs()) and ! are_strings_length_equal(sub_string , current_FD.get_lhs()))
+      {
+        return sub_string;
+      }
+    
+    }
+
+  }
+  return "1";
+
+}
+
+void create_sub_strings( string sub_string , string lhs ,  unordered_map<string , int> &sub_string_map)
+{
+  if(lhs.length() == 0 and sub_string.length() <= 0)
+  {   
+    return;
+  }
+
+  if(lhs.length() == 0)
+  {
+    sub_string_map.insert({sub_string , sub_string.length()});
+
+    //cout << " " << sub_string << "   " << sub_string.length() <<endl; 
+
+    return;
+  }
+
+  for(int i = 0 ; i < lhs.length() ; i++)
+  {
+    create_sub_strings(sub_string + lhs.at(i), lhs.substr(i + 1 , lhs.length() - (i + 1)) , sub_string_map);
+  }
+
+  create_sub_strings(sub_string, "" ,  sub_string_map);
+
+  return;
+
+}
+
+bool Check_Candidate_Key_In_FD(vector<FD *> &FD_array , string candidate_key)
+{
+
+  unordered_map<char , bool> track_attributes;
+
+  char attribute;
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    for(int lhs_index = 0 ; lhs_index < FD_array.at(i) -> get_lhs().length() ; lhs_index++)
+    {
+
+      attribute = FD_array.at(i) -> get_lhs().at(lhs_index);
+
+      if(!track_attributes.count(attribute))
+      {
+        track_attributes.insert({attribute , true});
+      }
+
+    }
+
+    attribute = FD_array.at(i) -> get_rhs().at(0);
+
+    if(!track_attributes.count(FD_array.at(i) -> get_rhs().at(0)))
+    {
+      track_attributes.insert({attribute , true});
+    }
+
+  }
+
+  for(int i = 0 ; i < candidate_key.length() ; i++)
+  {
+    if(!track_attributes.count(candidate_key.at(i)))
+    {
+      return false;
+    }
+  }
+
+  return true;
+
+}
+
+void join_FD(vector<FD *> &FD_array , unordered_map<string , string> *FD_map)
+{
+
+  for(int FD_index = 0 ; FD_index < FD_array.size() ; FD_index++)
+  {
+    if( !FD_map -> count( FD_array.at(FD_index) -> get_lhs() ) )
+    {
+      FD_map -> insert({FD_array.at(FD_index) -> get_lhs() , FD_array.at(FD_index) -> get_rhs()});
+    }
+
+    else
+    {
+      FD_map -> at(FD_array.at(FD_index) -> get_lhs()) += FD_array.at(FD_index) -> get_rhs();
+    }
+
+  }
+}
+
+string find_part_of_CK(vector<FD *> &FD_array , unordered_map<string , int> &sub_strings_map , string attributes_not_in_rhs)
+{
+ 
+
+  string sub_string , closure = "";
+
+  unordered_map<int , bool> *track_map;
+
+  for(int count = 0 ; count <= attributes_not_in_rhs.length() ; count++)
+  {
+      unordered_map<string , int> :: iterator i = sub_strings_map.begin();
+
+      for(; i != sub_strings_map.end() ; i++)
+      {
+
+        if(i -> second == count)
+        {
+        
+          track_map = new unordered_map<int , bool>;
+
+          sub_string = i -> first;
+
+          closure = sub_string;
+
+          for(int FD_index = 0 ; FD_index ; FD_index++)
+          {
+
+            if(!track_map -> count( FD_index ))
+            {
+
+              if(is_substring(FD_array.at(FD_index) -> get_lhs() , closure))
+              {
+
+                closure += FD_array.at(FD_index) -> get_rhs();
+
+                track_map -> insert({FD_index , true});
+
+                FD_index = -1;  
+
+              }
+
+            }
+
+          }
+
+          delete track_map;
+
+          if(is_substring(attributes_not_in_rhs , closure))
+          {
+
+            return sub_string;
+
+          }
+
+
+
+
+        }
+
+
+      }
+
+  }
+    
+
+}
+
+string get_non_repetative_attributes(string input)
+{
+
+  unordered_map<char , bool> map;
+  string output = "";
+
+  for(int i = 0 ; i < input.length() ; i++)
+  {
+
+    if(!map.count(input.at(i)))
+    {
+
+      map.insert({input.at(i) , true});
+
+    }
+
+
+  }
+
+  for(unordered_map<char,bool> :: iterator i = map.begin() ; i != map.end() ; i++)
+  {
+
+    output += i -> first;
+
+
+  }
+
+  return output;
+
+}
+
+string get_attribute_closure(vector<FD *> FD_array , string sub_string)
+{
+
+  string closure = sub_string;
+
+  unordered_map<int , bool> map;
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+
+    if(!map.count(i) and is_substring(FD_array.at(i) -> get_lhs() , closure))
+    {
+
+      closure += FD_array.at(i) -> get_rhs();
+
+      map.insert({i , true});
+
+      i = -1;
+
+    }
+
+  }
+
+  return closure;
+
+}
+
+void get_possible_candidate_keys(unordered_map<string , int> &sub_string_map , vector<FD *> &FD_array , vector<string> &candidate_key_array , string attribute_set)
+{
+
+  string current_sub_string , closure;
+
+  bool is_part_of_CK = false;
+
+  for(int count = 1; count <= attribute_set.length() ; count++)
+  {
+    for(unordered_map<string , int> :: iterator sub_string_index = sub_string_map.begin() ;  sub_string_index != sub_string_map.end() ; sub_string_index++)
+    {
+
+      if(sub_string_index -> second == count)
+      {
+        current_sub_string = sub_string_index -> first;
+
+
+        for(int candidate_key_index = 0 ; candidate_key_index < candidate_key_array.size() ; candidate_key_index++) // travere through C.K array to check if current substr's substr is in ck array 
+        {
+
+          if(is_substring(candidate_key_array.at(candidate_key_index) , sub_string_index -> first))
+          {
+
+            is_part_of_CK = true;
+
+          }
+
+
+        }
+
+        if(is_part_of_CK)
+        {
+
+          is_part_of_CK = false;
+
+          continue;
+
+        }
+
+        else
+        {
+
+          closure = get_attribute_closure(FD_array , current_sub_string); 
+
+
+          closure = get_non_repetative_attributes(closure);
+
+
+          //cout <<"cs:  " <<current_sub_string<<  " closure  "<<  closure <<endl;          
+
+          if(is_substring(closure , attribute_set) and closure.length() == attribute_set.length())
+          {
+            
+
+            candidate_key_array.push_back(current_sub_string);
+
+          }         
+
+        }
+
+      }
+
+    }
+  }
+
+}
+
+bool check_in_BCNF(vector<FD *> &FD_array , vector<string> candidate_key)
+{
+
+  string lhs_string;
+
+  bool present = false;
+
+  for(int FD_index = 0 ; FD_index < FD_array.size() ; FD_index++)
+  {
+
+    for(int candidate_key_index = 0 ; candidate_key_index < candidate_key.size() ; candidate_key_index++)
+    {
+
+      if(is_substring(candidate_key.at(candidate_key_index) , FD_array.at(FD_index) -> get_lhs()))
+      {
+
+        present = true;
+
+        break;
+
+      }
+
+
+    }
+
+    if(present)
+    {
+
+      present = false;
+
+      continue;
+
+    }
+
+    else
+    {
+
+      return false;
+
+    }
+
+  }
+
+  return true;
+
+}
+
+string remove_char_from_string(string str , char ch)
+{
+
+  str = get_non_repetative_attributes(str);
+
+  int i;
+
+  for(i = 0 ; i < str.length() ; i++)
+  {
+    if(str[i] == ch)
+    {
+
+      break;
+
+    }
+  }
+
+  if(i == str.length())
+    return str;
+
+
+  str = "" + str.substr(0 , i) + str.substr(i + 1 , str.length() - 1 - i);
+
+  return str;
+
+}
+
+void find_BCNF_relations(vector<FD *> FD_array , vector<string> candidate_key_array , unordered_map<string , string> &Relation_set , string attribute_set)
+{
+
+  bool is_superkey = false;
+  int count = 1;
+
+  for(int FD_index = 0; FD_index < FD_array.size() ; FD_index++)
+  {
+
+    for(int candidate_key_index = 0 ; candidate_key_index < candidate_key_array.size() ; candidate_key_index++)
+    {
+
+      if(is_substring(candidate_key_array.at(candidate_key_index) , FD_array.at(FD_index) -> get_lhs()))
+      {
+
+        is_superkey = true;
+
+        break;
+
+      }
+      
+    }
+
+    if(!is_superkey)
+    {
+
+      Relation_set.insert({"R" + to_string(count) , FD_array.at(FD_index) -> get_lhs() + FD_array.at(FD_index) -> get_rhs()});
+
+      //cout <<endl<<"R" + to_string(count) << "  "   << FD_array.at(FD_index) -> get_lhs() + FD_array.at(FD_index) -> get_rhs() << endl;
+
+      count ++;
+
+      //attribute_set.erase(remove(attribute_set.begin(), attribute_set.end(), FD_array.at(FD_index) -> get_rhs()), attribute_set.end());
+
+      for(int index = 0 ; index < (FD_array.at(FD_index) -> get_rhs()).size() ; index++)
+
+      attribute_set = remove_char_from_string(attribute_set , (FD_array.at(FD_index) -> get_rhs()).at(index));
+
+
+
+    }
+
+    is_superkey = false;
+
+  }
+
+  Relation_set.insert({"R" + to_string(count) , attribute_set});
+
+
+}
+
+
+
+
+int main()
+{
+
+  string FD_set;                //FD's set as a string 
+
+  cout << "write all the functional dependecies here: ";
+
+  cin >> FD_set;
+
+  string attribute_set;
+
+  cin >> attribute_set;
+
+  string lhs , rhs;
+
+  int prev = 0;
+
+  FD *FD_pointer;
+
+  vector<FD *> FD_array;
+
+  vector<FD *> given_FD_array;
+
+  unordered_map<string , int> *sub_string_map;
+
+  for(int curr = 0 ; curr < FD_set.length() ; curr++)
+  {
+    if(FD_set[curr] == '-')
+    {
+      lhs = FD_set.substr(prev , curr - prev);
+      //cout <<"lhs  "<< lhs<<endl;
+      curr += 1;
+
+      prev = curr + 1;
+
+    }
+
+    else
+
+    if(FD_set[curr] == ',' or FD_set[curr] == ';')
+    {
+      rhs = FD_set.substr(prev , curr - prev);
+      //cout <<"rhs  "<< rhs<<endl;
+      prev = curr + 1;
+
+      FD_pointer = new FD(lhs , rhs);
+
+      FD_array.push_back(FD_pointer);
+
+      FD_pointer = new FD(lhs , rhs);
+
+      given_FD_array.push_back(FD_pointer);
+
+    }
+
+  }
+
+  
+  string attributes_not_in_rhs = "";
+
+  unordered_map<char, bool> track_attributes;
+
+  
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    if(!track_attributes.count(FD_array.at(i) -> get_rhs().at(0)))
+    {
+        
+      track_attributes.insert({FD_array.at(i) -> get_rhs().at(0) , true});
+    
+    }  
+  }
+
+  string str = "";
+
+  for(int i = 0 ; i < attribute_set.length() ; i++)
+  {
+    if(!track_attributes.count( attribute_set.at(i) ))
+    {
+      attributes_not_in_rhs.append(1 , attribute_set.at(i)) ;
+    }
+  }
+
+  //cout << "now   :  " << attributes_not_in_rhs << endl;
+
+  unordered_map<int , bool> map;
+
+
+
+  string lhs_string , rhs_string ,closure = attributes_not_in_rhs;
+
+  for(int FD_array_index = 0 ; FD_array_index < FD_array.size() ; FD_array_index++)
+  {
+
+    lhs_string = FD_array.at(FD_array_index) -> get_lhs();
+
+    rhs_string = FD_array.at(FD_array_index) -> get_rhs();
+
+    if(!map.count(FD_array_index) and is_substring(lhs_string , closure))
+    {
+      closure += rhs_string;
+
+      map.insert({FD_array_index , true});
+
+      FD_array_index = -1;
+    }
+
+  }
+
+  //cout << "attr " << attributes_not_in_rhs <<"   closure : "  << closure << endl;
+
+  unordered_map<char , bool> track_map;
+
+  for(int i = 0 ; i < attribute_set.length() ; i++)
+  {
+
+    track_map.insert({attribute_set.at(i) , true});
+
+  }
+
+  
+  for(int i = 0 ; i < closure.length() ; i++)
+  {
+
+    track_map[closure.at(i)]= false;
+
+  }
+
+  str = "";
+
+  for(unordered_map<char , bool> :: iterator i = track_map.begin() ; i != track_map.end(); i++)
+  {
+    if(i -> second == true)
+    {
+      str += i -> first;
+    }
+  }
+
+   
+
+  string output;
+
+
+  for(int i = 0 ; i < FD_array.size() ; i++)
+  {
+    sub_string_map = new unordered_map<string , int>;
+
+    create_sub_strings("" ,FD_array[i] -> get_lhs() ,  *sub_string_map);
+
+    output = remove_or_replace_FD(FD_array , *sub_string_map , *FD_array.at(i));
+
+    //cout << "output  : " << output << endl;
+
+    delete sub_string_map;
+
+    if(output == "0")
+    {
+      FD_array.erase(FD_array.begin() + i);
+      i--;
+    }
+
+    else
+
+    if(output != "1")
+    {
+      FD_array.at(i) -> set_lhs(output);
+    }
+
+  }
+
+  bool is_already_in_3NF = true;
+
+  if(FD_array.size() == given_FD_array.size())
+  {
+
+    for(int i = 0 ; i < FD_array.size() ; i++)
+    {
+
+      if(!(given_FD_array.at(i) -> get_lhs() == FD_array.at(i) -> get_lhs() and given_FD_array.at(i) -> get_rhs() == FD_array.at(i) -> get_rhs()))
+      {
+
+        is_already_in_3NF = false;
+
+        break;
+
+      }
+
+    }
+
+  }
+
+  else
+  {
+
+    is_already_in_3NF = false;
+
+  }
+
+  unordered_map<string,string> *FD_map = new unordered_map<string,string>;
+  
+  join_FD(FD_array , FD_map);  
+
+
+  if(is_already_in_3NF)
+  {
+
+    cout << endl<<"Given relation is already is 'IN' 3NF"<<endl<<endl;
+
+  }
+
+  else
+  {//
+
+    cout <<endl<< "given relation is already is 'NOT' in 3NF"<<endl<<endl;
+
+    cout << endl<<endl<<endl << "SET OF RELATIONS FORMED AFTER NORMALISATION INTO 3NF  : " << endl<<endl;
+
+    
+
+    int num = 0;
+
+
+    for(unordered_map<string,string> :: iterator i = FD_map -> begin() ; i != FD_map -> end() ; i++,num++)
+    {
+      cout << "R" << num + 1 << "  =  " << "(" << i -> first << i -> second << ")" <<endl <<endl;
+    }
+
+    
+
+    if(attributes_not_in_rhs.length() != 0 and !Check_Candidate_Key_In_FD(FD_array , attributes_not_in_rhs))
+    {
+      if(str.length() == 0)
+      {
+        
+        cout << "R" << num + 1 << "  =  " << "(" << attributes_not_in_rhs << ")" <<endl<<endl<<endl;
+        
+      }
+
+      else
+      {
+        
+        create_sub_strings("" , str , *sub_string_map);
+
+        string part = find_part_of_CK(FD_array , *sub_string_map , attributes_not_in_rhs);
+
+        cout << "R" << num + 1 << "  =  " << "(" <<  part + attributes_not_in_rhs << ")" <<endl<<endl<<endl;
+
+          
+      }
+    
+    }
+  }
+
+  if(is_already_in_3NF)
+  {
+
+    unordered_map<string , string> *Relation_set = new unordered_map<string , string>;
+
+    unordered_map<char , bool> *attribute_set_map = new unordered_map<char , bool>;
+
+    for (int i = 0; i < attribute_set.length(); i++)
+    {
+
+      attribute_set_map -> insert({attribute_set.at(i) , true});
+
+    }
+
+    
+
+    for(unordered_map<string,string> :: iterator i = FD_map -> begin() ; i != FD_map -> end() ; i++)
+    {
+
+      for(int index = 0 ; index < i -> second.length() ; index++)
+      {
+
+        attribute_set_map -> at(i -> second.at(index)) = false;
+
+      }
+
+    }
+
+
+
+    attributes_not_in_rhs = "";
+
+    for(unordered_map<char,bool> :: iterator i = attribute_set_map -> begin() ; i != attribute_set_map -> end() ; i++)
+    {
+
+      if(i -> second == true)
+      {
+
+        attribute_set.append(1 , i -> first);
+
+      }
+
+    }
+
+    
+
+    closure = get_attribute_closure(FD_array , attributes_not_in_rhs);
+
+    attribute_set_map -> empty();
+
+    for(unordered_map<char,bool> :: iterator i = attribute_set_map -> begin() ; i != attribute_set_map -> end() ; i++)
+    {
+
+      i -> second = false;
+
+    }
+
+    for(int i = 0 ; i < closure.length() ; i++)
+    {
+
+      attribute_set_map -> at(closure.at(i)) = true;
+
+    }
+
+
+   
+    vector<string> candidate_key_array;
+
+
+    unordered_map<string , int> *sub_string_map_clone = new unordered_map<string , int>;
+
+ 
+    create_sub_strings("" , attribute_set , *sub_string_map);      
+
+
+
+    for(unordered_map<string , int> :: iterator i = sub_string_map -> begin() ; i != sub_string_map ->end() ; i++)
+    {
+      string sub_string = get_non_repetative_attributes(i -> first + attributes_not_in_rhs);
+
+      sub_string_map_clone -> insert({sub_string , sub_string.length()});
+
+    }
+
+
+
+    get_possible_candidate_keys(*sub_string_map_clone , FD_array , candidate_key_array , attribute_set);
+
+      
+
+    bool is_in_BCNF = check_in_BCNF(FD_array , candidate_key_array);
+
+    //cout << "jo  " << candidate_key_array.at(0) <<"  "<<candidate_key_array.at(1);
+
+    if(is_in_BCNF)
+    {
+      cout << "The relation R (" << get_non_repetative_attributes(attribute_set) << ") is in BCNF"<<endl<<endl;;
+    }
+
+    else
+    {
+
+
+      cout << "The relation R (" << get_non_repetative_attributes(attribute_set) << ") is 'NOT' in BCNF"<<endl<<endl;
+
+      unordered_map<string , string> *FD_map_new = new unordered_map<string , string>;
+
+      join_FD(FD_array , FD_map_new);
+
+      FD_array.clear();
+
+    
+
+      FD *temp__FD_pointer;
+
+      for(unordered_map<string,string> :: iterator i = FD_map_new -> begin() ; i != FD_map_new -> end() ; i++)
+      {
+
+        temp__FD_pointer = new FD(i -> first , i -> second);
+
+        FD_array.push_back(temp__FD_pointer);
+
+      }
+     
+
+      find_BCNF_relations(FD_array , candidate_key_array , *Relation_set , attribute_set);
+
+      cout << "THE RELATIONS FORMED AFTER CONVERTING GIVEN RELATION  R (" << get_non_repetative_attributes(attribute_set) <<") into BCNF : " <<  endl<<endl;
+
+      for(unordered_map<string , string> :: iterator i = Relation_set->begin() ; i != Relation_set->end() ; i++)
+      {
+
+        cout << endl << i -> first << "(" << i -> second << ")" << endl;
+
+      }
+
+    }
+
+  }
+
+  cout << endl<<endl;
+}
+
+
+
+/*
+sample input 1 :
+A->B,ABCD->E,EF->G,EF->H,ACDF->E,ACDF->G;
+ABCDEFGH
+
+output 1:
+given relation is already is 'NOT' in 3NF
+
+
+SET OF RELATIONS FORMED AFTER NORMALISATION INTO 3NF  : 
+
+R1  =  (EFGH)
+
+R2  =  (ACDE)
+
+R3  =  (AB)
+
+sample input 2 :
+C->C,C->S,C->J,C->D,C->P,C->Q,C->V,SD->P,JP->C,J->S;
+CSJDPQV
+
+output 2:
+given relation is already is 'NOT' in 3NF
+
+
+
+
+SET OF RELATIONS FORMED AFTER NORMALISATION INTO 3NF  : 
+
+R1  =  (JPC)
+
+R2  =  (SDP)
+
+R3  =  (JS)
+
+R4  =  (CJDQV)
+
+
+
+sample input 3:
+A->B,A->C,B->C;
+ABC
+
+*/
+
+
+
+
